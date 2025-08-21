@@ -1,48 +1,39 @@
-// stt_offline.js — Transcrição offline de arquivo com Whisper (Transformers.js)
-// Corrigido com loader de fallback (várias CDNs/versões) para evitar 404.
-
+// stt_offline.js — STT offline (Whisper tiny) com loader robusto
+let TF = null;        // módulo transformers
 let transcriber = null;
-let TF = null; // módulo da lib
 
 const CANDIDATES = [
-  // jsDelivr (v3 empacotado)
-  'https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0/dist/transformers.min.js',
-  // jsDelivr (v3 ESM)
+  'https://esm.sh/@xenova/transformers@3.0.0',          // ESM estável
+  'https://esm.sh/@xenova/transformers@2.15.0',         // ESM fallback
   'https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0?module',
-  // jsDelivr (v2 estável)
   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0?module',
-  // unpkg (v3 empacotado)
-  'https://unpkg.com/@xenova/transformers@3.0.0/dist/transformers.min.js',
-  // unpkg (v2 empacotado)
-  'https://unpkg.com/@xenova/transformers@2.15.0/dist/transformers.min.js',
 ];
 
 async function loadTransformers(setStatus){
-  for (const url of CANDIDATES){
+  for(const url of CANDIDATES){
     try{
-      setStatus?.(`carregando lib… (${new URL(url).host})`);
+      setStatus?.(`carregando lib… ${new URL(url).host}`);
       const m = await import(/* @vite-ignore */ url);
+      console.info('[STT] transformers carregado de', url);
       return m;
     }catch(e){
-      console.warn('[STT] falhou importar', url, e);
-      // tenta o próximo
+      console.warn('[STT] falhou', url, e?.message||e);
     }
   }
-  throw new Error('Não foi possível carregar Transformers.js de nenhuma CDN.');
+  throw new Error('Nenhuma CDN funcionou para @xenova/transformers.');
 }
 
 async function ensureModel(setStatus){
-  if (!TF){
+  if(!TF){
     TF = await loadTransformers(setStatus);
-    // cache em IndexedDB
     TF.env.useBrowserCache = true;
     TF.env.remoteModels = true;
   }
-  if (!transcriber){
+  if(!transcriber){
     setStatus?.('baixando modelo…');
     transcriber = await TF.pipeline(
       'automatic-speech-recognition',
-      'Xenova/whisper-tiny', // multilíngue, pequeno
+      'Xenova/whisper-tiny',   // multilíngue, pequeno
       { quantized: true }
     );
     setStatus?.('modelo carregado');
@@ -50,41 +41,34 @@ async function ensureModel(setStatus){
 }
 
 async function transcribeSelectedFile(){
-  const fileInput = document.getElementById('audioFile');
-  const statusEl  = document.getElementById('sttStatus');
-  const btn       = document.getElementById('btnTranscribeFile');
-  const ta        = document.getElementById('pastedTranscript');
-
-  if(!fileInput || !fileInput.files || !fileInput.files[0]){
-    alert('Escolha um arquivo de áudio primeiro.'); return;
-  }
-  const set = s => { if(statusEl) statusEl.textContent = s; };
+  const inp = document.getElementById('audioFile');
+  const ta  = document.getElementById('pastedTranscript');
+  const sEl = document.getElementById('sttStatus');
+  const btn = document.getElementById('btnTranscribeFile');
+  if(!inp?.files?.[0]){ alert('Escolha um arquivo de áudio primeiro.'); return; }
+  const set = (t)=>{ if(sEl) sEl.textContent = t; };
 
   try{
-    if(btn) btn.disabled = true;
+    btn && (btn.disabled = true);
     await ensureModel(set);
     set('transcrevendo…');
-    const out = await transcriber(fileInput.files[0], {
-      chunk_length_s: 30,
-      stride_length_s: 5,
-      return_timestamps: false
+    const out = await transcriber(inp.files[0], {
+      chunk_length_s: 30, stride_length_s: 5, return_timestamps: false
     });
     set('pronto');
-    ta.value = (ta.value ? ta.value.trim() + '\n\n' : '') + (out?.text || '');
+    ta.value = (ta.value ? ta.value.trim()+'\n\n' : '') + (out?.text || '');
     ta.dispatchEvent(new Event('input'));
   }catch(err){
     console.error('STT offline error:', err);
-    set('erro');
-    alert('Falha na transcrição offline. Veja o Console (F12) para detalhes.');
+    set('erro'); alert('Falha na transcrição. Veja o Console (F12) para detalhes.');
   }finally{
-    if(btn) btn.disabled = false;
+    btn && (btn.disabled = false);
   }
 }
 
-// Event delegation (independe do components.js)
-document.addEventListener('click', ev=>{
-  const b = ev.target.closest('#btnTranscribeFile');
-  if(!b) return;
-  ev.preventDefault();
-  transcribeSelectedFile();
+// liga o botão mesmo sem código no components.js
+document.addEventListener('click', (ev)=>{
+  if(ev.target.closest('#btnTranscribeFile')){
+    ev.preventDefault(); transcribeSelectedFile();
+  }
 });
