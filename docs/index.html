@@ -165,7 +165,13 @@
           </div>
           <textarea id="liveTranscript" rows="8" placeholder="A transcrição do microfone aparecerá aqui..." readonly></textarea>
         </div>
-
+<div class="row" style="margin-top:6px">
+  <button id="btnTranscribeFile" class="btn">Transcrever arquivo (offline)</button>
+  <span id="sttStatus" class="badge">modelo: não carregado</span>
+</div>
+<p class="muted" style="margin-top:6px">
+  A primeira transcrição baixa o modelo Whisper-tiny (~40–70 MB) e cacheia no navegador.
+</p>
         <hr style="border:none;border-top:1px solid #1e2450;margin:12px 0" />
         <h3>Metadados da sessão</h3>
         <div class="grid">
@@ -208,5 +214,7 @@
   <script type="module" src="db.js"></script>
   <script type="module" src="utils.js"></script>
   <script type="module" src="app.js"></script>
+  <script type="module" src="stt_offline.js"></script>
 </body>
 </html>
+
