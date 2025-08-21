@@ -1,1 +1,210 @@
-<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>ok</title><h1>PsicoAi online ✅</h1>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>PsicoAi — Prontuários & Análise</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="#5b7fff" stroke-width="2"/>
+        <path d="M7 14c2 2 8 2 10-1" stroke="#5b7fff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <h1>PsicoAi</h1>
+    </div>
+    <input id="searchBox" class="search" placeholder="Buscar paciente por nome, e‑mail ou CPF..." />
+  </header>
+
+  <main class="container">
+
+    <!-- BACKUP & RELATÓRIOS -->
+   <div class="row">
+  <button id="exportJson" class="btn">Exportar JSON (banco completo)</button>
+  <button id="exportCsvPatients" class="btn">Exportar CSV (Pacientes)</button>
+  <button id="exportCsvRecords" class="btn">Exportar CSV (Prontuários)</button>
+  <button id="importJsonBtn" class="btn">Importar JSON</button>
+  <input id="importJsonInput" type="file" accept="application/json" style="display:none" />
+  <button id="pdfReport" class="btn primary">Gerar PDF — Módulo Inteligente</button>
+  <button id="pdfReportPeriod" class="btn">Relatório por período (PDF)</button>
+</div>
+
+<div class="row" style="margin-top:8px">
+  <span class="badge">Comparativo A</span>
+  <label>De: <input id="compAFrom" type="date"></label>
+  <label>Até: <input id="compATo" type="date"></label>
+  <span class="badge">Comparativo B</span>
+  <label>De: <input id="compBFrom" type="date"></label>
+  <label>Até: <input id="compBTo" type="date"></label>
+  <button id="pdfReportCompare" class="btn">Relatório comparativo (PDF)</button>
+</div>
+
+    <!-- CONFIGURAÇÕES CLÍNICAS -->
+    <section class="panel">
+      <h2>Configurações Clínicas</h2>
+      <div class="grid">
+        <label>Nome do profissional
+          <input id="clinicianName" placeholder="ex.: Dra. Maria Silva" />
+        </label>
+        <label>Registro (CRP/CRM)
+          <input id="clinicianReg" placeholder="ex.: CRP 00/00000" />
+        </label>
+        <label class="full">Chave secreta para assinatura digital (HMAC-SHA-256)
+          <input id="signatureSecret" type="password" placeholder="Defina uma frase/segredo. Fica apenas no seu navegador." />
+        </label>
+      </div>
+
+      <h3 style="margin-top:10px">Campos clínicos customizáveis (aparecem em cada sessão)</h3>
+      <div class="row">
+        <input id="newFieldLabel" placeholder="ex.: Setting, Intervenções, Escala PHQ-9..." />
+        <button id="addField" class="btn">Adicionar campo</button>
+      </div>
+      <div id="customFieldsList" class="list" style="margin-top:8px"></div>
+      <div class="row" style="margin-top:8px">
+        <button id="saveSettings" class="btn primary">Salvar configurações</button>
+        <button id="resetSettings" class="btn">Restaurar padrão</button>
+      </div>
+      <p class="muted">As configurações são salvas no navegador (localStorage).</p>
+    </section>
+
+    <!-- CADASTRO -->
+    <section class="panel">
+      <h2>Cadastrar / Editar Paciente</h2>
+      <form id="patientForm" autocomplete="off">
+        <div class="grid">
+          <label>Nome <input name="nome" required /></label>
+          <label>CPF <input name="cpf" inputmode="numeric" placeholder="000.000.000-00" required /></label>
+          <label>Data de nascimento <input name="dob" type="date" required /></label>
+          <label>E‑mail <input name="email" type="email" required /></label>
+          <label class="full">Endereço <input name="endereco" /></label>
+        </div>
+        <div class="row">
+          <button class="btn primary" type="submit">Salvar</button>
+          <button class="btn" type="reset" id="resetForm">Limpar</button>
+          <span class="muted">Privacidade: o CPF é hash (não armazenamos o valor bruto)</span>
+        </div>
+        <input type="hidden" name="id" />
+      </form>
+    </section>
+
+    <!-- LISTA -->
+    <section class="panel">
+      <h2>Pacientes</h2>
+      <div id="patientList" class="list"></div>
+    </section>
+
+    <!-- PRONTUÁRIO + FILTROS -->
+    <section class="panel">
+      <h2>Prontuário & Transcrição</h2>
+      <div class="row">
+        <label>De: <input id="filterFrom" type="date"></label>
+        <label>Até: <input id="filterTo" type="date"></label>
+        <button id="applyFilter" class="btn">Aplicar</button>
+        <button id="clearFilter" class="btn">Limpar</button>
+      </div>
+      <div id="recordView" class="record-view empty" style="margin-top:8px">
+        <p>Selecione um paciente para visualizar o prontuário.</p>
+      </div>
+    </section>
+<section class="panel">
+  <h2>Insights & Gráficos (período aplicado)</h2>
+  <div id="chartsPanel">
+    <div class="box">
+      <strong>Duração total por mês (min)</strong>
+      <svg id="chartLine" viewBox="0 0 600 220" style="width:100%;height:auto"></svg>
+    </div>
+    <div class="box">
+      <strong>Termos mais frequentes</strong>
+      <svg id="chartBars" viewBox="0 0 600 260" style="width:100%;height:auto"></svg>
+    </div>
+  </div>
+</section>
+
+    <!-- MÓDULO INTELIGENTE -->
+    <section class="panel">
+      <h2>Módulo Inteligente (Resumo, Análise, Freud • Klein • Lacan)</h2>
+      <div id="analysisPanel" class="analysis"></div>
+    </section>
+  </main>
+
+  <!-- MODAL TRANSCRIÇÃO -->
+  <div id="transcriptionModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <header class="modal-header">
+        <h3>Nova Transcrição</h3>
+        <button class="icon-btn" id="closeModal" aria-label="Fechar">✕</button>
+      </header>
+      <div class="modal-body">
+        <div class="tabs">
+          <button class="tab active" data-tab="upload">Importar Áudio</button>
+          <button class="tab" data-tab="mic">Transcrever (Microfone)</button>
+        </div>
+
+        <div class="tab-panel" data-panel="upload">
+          <label class="full">Arquivo de áudio
+            <input id="audioFile" type="file" accept="audio/*" />
+          </label>
+          <label class="full">Cole a transcrição (opcional)
+            <textarea id="pastedTranscript" rows="6" placeholder="Cole a transcrição do áudio, se tiver."></textarea>
+          </label>
+        </div>
+
+        <div class="tab-panel hidden" data-panel="mic">
+          <p class="muted">Use o microfone para ditar (Web Speech API).</p>
+          <div class="speech-controls">
+            <button id="startMic" class="btn primary">Iniciar Ditado</button>
+            <button id="stopMic" class="btn" disabled>Parar</button>
+            <span id="micStatus" class="badge">parado</span>
+          </div>
+          <textarea id="liveTranscript" rows="8" placeholder="A transcrição do microfone aparecerá aqui..." readonly></textarea>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #1e2450;margin:12px 0" />
+        <h3>Metadados da sessão</h3>
+        <div class="grid">
+          <label>Duração (min) <input id="sessDuration" type="number" min="0" step="5" placeholder="ex.: 50" /></label>
+          <label>Setting <input id="sessSetting" placeholder="ex.: presencial, remoto, hospitalar..." /></label>
+          <label class="full">Intervenções <input id="sessInterv" placeholder="associações, interpretações, manejo..." /></label>
+	<label class="full">CID-10 (códigos, separados por vírgula)
+  	<input id="sessCID" list="cidList" placeholder="ex.: F32.1, F41.1" />
+  	<datalist id="cidList"></datalist>
+  	<div id="cidSugg" class="small muted"></div>
+	</label>
+
+	<label class="full">DSM-5 (códigos, separados por vírgula)
+ 	 <input id="sessDSM" list="dsmList" placeholder="ex.: 300.02, 296.32" />
+ 	 <datalist id="dsmList"></datalist>
+  	<div id="dsmSugg" class="small muted"></div>
+	</label>
+
+	<!-- Sugestões por descritor (sinônimos/termos do paciente) -->
+	<div class="full">
+  	<div id="descSugg" class="small muted"></div>
+	</div>
+
+        <div id="customFieldsContainer" class="grid" style="margin-top:6px"></div>
+      </div>
+      <footer class="modal-footer">
+        <button id="saveTranscript" class="btn primary">Salvar no Prontuário</button>
+        <button id="cancelTranscript" class="btn">Cancelar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script type="module" src="js/utils.js"></script>
+  <script type="module" src="js/db.js"></script>
+  <script type="module" src="js/analysis.js"></script>
+  <script type="module" src="js/speech.js"></script>
+  <script type="module" src="js/export.js"></script>
+  <script type="module" src="js/report.js"></script>
+  <script type="module" src="js/settings.js"></script>
+  <script type="module" src="js/codes.js"></script>
+  <script type="module" src="js/autocomplete.js"></script>
+  <script type="module" src="js/charts.js"></script>
+  <script type="module" src="js/components.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
