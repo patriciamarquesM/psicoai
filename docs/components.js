@@ -3,11 +3,10 @@ import { validateCPF, sha256Hex, maskCPF, isEmail, uid } from './utils.js';
 import { analyzeTranscript } from './analysis.js';
 import { speechSupported, startDictation, stopDictation, currentBuffer } from './speech.js';
 import { bindExportImportUI } from './export.js';
-import { bindReportUI } from './report.js';
+import { bindReportUI } from './report.js';   // <<< apenas UMA VEZ
 import { initSettingsUI } from './settings.js';
-import { updateCharts } from './charts.js';
 import { bindAutocomplete } from './autocomplete.js';
-import { bindReportUI } from './report.js'; // (já atualizado no seu projeto)
+import { updateCharts } from './charts.js';
 
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
@@ -390,4 +389,5 @@ export function init(){
   initSettingsUI();
   bindAutocomplete();
 }
+
 
