@@ -7,6 +7,7 @@ import { bindReportUI } from './report.js';   // <<< apenas UMA VEZ
 import { initSettingsUI } from './settings.js';
 import { bindAutocomplete } from './autocomplete.js';
 import { updateCharts } from './charts.js';
+import { transcribeFileOffline } from './stt_offline.js';
 
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
@@ -389,5 +390,6 @@ export function init(){
   initSettingsUI();
   bindAutocomplete();
 }
+
 
 
