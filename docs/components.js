@@ -271,6 +271,27 @@ function openTranscriptionModal(){
     if(!transcript && !audioUrl){
       if(!confirm('Salvar sem transcrição (apenas anexando o áudio)?')) return;
     }
+    // Botão "Transcrever arquivo (offline)"
+const btnStt = document.getElementById('btnTranscribeFile');
+const sttStatus = document.getElementById('sttStatus');
+btnStt?.addEventListener('click', async ()=>{
+  const f = document.getElementById('audioFile').files[0];
+  if(!f){ alert('Escolha um arquivo de áudio primeiro.'); return; }
+  btnStt.disabled = true;
+  const set = (s)=>{ sttStatus.textContent = s; };
+  try{
+    const txt = await transcribeFileOffline(f, set);
+    const ta = document.getElementById('pastedTranscript');
+    ta.value = (ta.value ? (ta.value.trim() + '\n\n') : '') + txt;
+    set('transcrição concluída');
+  }catch(err){
+    console.error(err);
+    alert('Falha na transcrição offline. Veja o Console (F12) para detalhes.');
+    set('erro');
+  }finally{
+    btnStt.disabled = false;
+  }
+});
 
     // Metadados
     const duration = parseInt($('#sessDuration').value || '0', 10) || null;
@@ -390,6 +411,7 @@ export function init(){
   initSettingsUI();
   bindAutocomplete();
 }
+
 
 
 
