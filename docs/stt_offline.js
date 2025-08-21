@@ -1,119 +1,118 @@
-// stt_offline.js — STT offline robusto (Whisper) com fallback e logs
+// stt_offline.js — STT offline robusto (Whisper) com decode PCM + fallback + debug
 let TF = null;
-let transcriberTiny = null;
-let transcriberSmall = null;
+let transTiny = null;
+let transSmall = null;
 
-const CDN_TRIES = [
+const CDNs = [
   'https://esm.sh/@xenova/transformers@3.0.0',
   'https://esm.sh/@xenova/transformers@2.15.0',
   'https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0?module',
   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0?module',
 ];
 
-async function loadTF(set){
-  for(const url of CDN_TRIES){
-    try{
-      set?.(`carregando lib… ${new URL(url).host}`);
-      const m = await import(/* @vite-ignore */ url);
-      console.info('[STT] OK from', url);
-      m.env.useBrowserCache = true; m.env.remoteModels = true;
-      return m;
-    }catch(e){ console.warn('[STT] falhou', url, e?.message||e); }
+function setStatus(t){ const el=document.getElementById('sttStatus'); if(el) el.textContent=t; }
+function debug(msg,obj){
+  const box = document.getElementById('sttDebug') || (()=>{ 
+    const pre=document.createElement('pre'); pre.id='sttDebug';
+    pre.style.cssText='margin-top:8px;max-height:140px;overflow:auto;background:#0f1330;border:1px solid #1e2450;border-radius:8px;padding:8px;color:#a9b0d6;font-size:12px';
+    const area=document.querySelector('#pastedTranscript')?.parentElement; area?.appendChild(pre); return pre; 
+  })();
+  box.textContent = `[STT] ${msg}` + (obj ? '\n' + safeString(obj) : '');
+}
+function safeString(x){ try{ return JSON.stringify(x,null,2).slice(0,5000); }catch(e){ return String(x); } }
+
+async function loadTF(){
+  for(const url of CDNs){
+    try{ setStatus(`carregando lib… ${new URL(url).host}`); const m = await import(/* @vite-ignore */ url);
+      m.env.useBrowserCache = true; m.env.remoteModels = true; debug('library OK', {url}); return m;
+    }catch(e){ debug('falhou CDN', {url, err:e?.message}); }
   }
-  throw new Error('Nenhuma CDN funcionou.');
+  throw new Error('Não deu para carregar @xenova/transformers de nenhuma CDN.');
 }
 
-async function getTiny(set){
-  if(!TF) TF = await loadTF(set);
-  if(!transcriberTiny){
-    set?.('baixando modelo (tiny)…');
-    transcriberTiny = await TF.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', { quantized:true });
-    set?.('modelo tiny carregado');
+async function getTiny(){ if(!TF) TF = await loadTF(); if(!transTiny){ setStatus('baixando modelo (tiny)…'); transTiny = await TF.pipeline('automatic-speech-recognition','Xenova/whisper-tiny',{quantized:true}); setStatus('modelo tiny carregado'); } return transTiny; }
+async function getSmall(){ if(!TF) TF = await loadTF(); if(!transSmall){ setStatus('baixando modelo (small)…'); transSmall = await TF.pipeline('automatic-speech-recognition','Xenova/whisper-small',{quantized:true}); setStatus('modelo small carregado'); } return transSmall; }
+
+async function fileToPCMMono(file){
+  const buf = await file.arrayBuffer();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = new AC({sampleRate: 16000}); // força 16k quando possível
+  const audio = await ac.decodeAudioData(buf);
+  // mixdown para mono
+  const len = audio.length;
+  const out = new Float32Array(len);
+  for(let ch=0; ch<audio.numberOfChannels; ch++){
+    const data = audio.getChannelData(ch);
+    for(let i=0;i<len;i++) out[i] += data[i] / audio.numberOfChannels;
   }
-  return transcriberTiny;
-}
-async function getSmall(set){
-  if(!TF) TF = await loadTF(set);
-  if(!transcriberSmall){
-    set?.('baixando modelo (small)…');
-    transcriberSmall = await TF.pipeline('automatic-speech-recognition', 'Xenova/whisper-small', { quantized:true });
-    set?.('modelo small carregado');
-  }
-  return transcriberSmall;
+  try{ ac.close(); }catch(_){}
+  // se for sampleRate diferente, deixamos o ac cuidar (16000 acima); se não, pega a do buffer
+  const sr = ac.sampleRate || audio.sampleRate || 16000;
+  return { array: out, sampling_rate: sr };
 }
 
-function ui(){
-  return {
-    file: document.getElementById('audioFile'),
-    ta: document.getElementById('pastedTranscript'),
-    status: document.getElementById('sttStatus'),
-    btn: document.getElementById('btnTranscribeFile'),
-  };
-}
-function setStatus(el, t){ if(el) el.textContent = t; }
-
-async function runModel(model, file, set){
-  return await model(file, {
-    // parâmetros que ajudam o Whisper
-    language: 'pt',          // força PT (evita falha na detecção)
-    task: 'transcribe',      // não traduz, só transcreve
-    chunk_length_s: 20,      // chunks menores = mais estável em PCs modestos
+async function run(model, input){
+  // força PT-BR e transcribe (não translate)
+  return await model(input, {
+    language: 'pt',
+    task: 'transcribe',
+    chunk_length_s: 20,
     stride_length_s: 5,
     return_timestamps: false
   });
 }
 
 async function transcribeSelectedFile(){
-  const {file, ta, status, btn} = ui();
-  if(!file?.files?.[0]){ alert('Escolha um arquivo de áudio primeiro.'); return; }
-  const f = file.files[0];
-  const set = t => setStatus(status, t);
+  const inp = document.getElementById('audioFile');
+  const ta  = document.getElementById('pastedTranscript');
+  const btn = document.getElementById('btnTranscribeFile');
+  if(!inp?.files?.[0]){ alert('Escolha um arquivo de áudio primeiro.'); return; }
+  const file = inp.files[0];
 
   try{
     btn && (btn.disabled = true);
+    setStatus('preparando áudio…');
+    const pcm = await fileToPCMMono(file);
+    debug('PCM pronto', {samples: pcm.array.length, sr: pcm.sampling_rate});
 
-    // 1) tenta TINY
-    const tiny = await getTiny(set);
-    set('transcrevendo (tiny)…');
-    console.time('[STT] tiny');
-    let out = await runModel(tiny, f, set);
-    console.timeEnd('[STT] tiny');
-    console.log('[STT] tiny retorno:', out);
+    // 1) tiny
+    const tiny = await getTiny();
+    setStatus('transcrevendo (tiny)…');
+    const outTiny = await run(tiny, pcm);
+    debug('retorno tiny', outTiny);
+    let text = (outTiny?.text || outTiny?.chunks?.map(c=>c.text).join(' ') || '').trim();
 
-    let text = (out && (out.text || out?.chunks?.map(c=>c.text).join(' ') || '')).trim();
-
-    // 2) se vazio, tenta SMALL (fallback)
+    // 2) fallback small se vazio
     if(!text){
-      set('resultado vazio — tentando modelo maior…');
-      const small = await getSmall(set);
-      console.time('[STT] small');
-      out = await runModel(small, f, set);
-      console.timeEnd('[STT] small');
-      console.log('[STT] small retorno:', out);
-      text = (out && (out.text || out?.chunks?.map(c=>c.text).join(' ') || '')).trim();
+      setStatus('resultado vazio — tentando modelo maior…');
+      const small = await getSmall();
+      const outSmall = await run(small, pcm);
+      debug('retorno small', outSmall);
+      text = (outSmall?.text || outSmall?.chunks?.map(c=>c.text).join(' ') || '').trim();
     }
 
     if(!text){
-      set('sem fala detectada');
-      alert('O modelo não detectou fala no arquivo. Tente outro formato (MP3/WAV) ou verifique o áudio.');
+      setStatus('sem fala detectada');
+      alert('Não foi detectada fala. Tente outro arquivo (MP3/WAV) ou verifique o volume/ruído.');
       return;
     }
 
-    set('pronto');
+    setStatus('pronto');
     ta.value = (ta.value ? ta.value.trim()+'\n\n' : '') + text;
     ta.dispatchEvent(new Event('input'));
   }catch(err){
     console.error('STT offline error:', err);
-    set('erro');
-    alert('Falha na transcrição. Veja o Console (F12) para detalhes.');
+    debug('erro', {message: err?.message});
+    setStatus('erro');
+    alert('Falha na transcrição (veja detalhes no Console).');
   }finally{
     btn && (btn.disabled = false);
   }
 }
 
+// Gatilho do botão (independe do components.js)
 document.addEventListener('click', (ev)=>{
   if(ev.target.closest('#btnTranscribeFile')){
-    ev.preventDefault();
-    transcribeSelectedFile();
+    ev.preventDefault(); transcribeSelectedFile();
   }
 });
