@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>PsicoAi — Pacientes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container" style="grid-template-columns:1fr 1fr">
+    <section class="panel">
+      <h2>Cadastrar / Editar</h2>
+      <form id="patientForm" autocomplete="off">
+        <div class="grid">
+          <label>Nome <input name="nome" required /></label>
+          <label>CPF <input name="cpf" inputmode="numeric" placeholder="000.000.000-00" required /></label>
+          <label>Data de nascimento <input name="dob" type="date" required /></label>
+          <label>E-mail <input name="email" type="email" required /></label>
+          <label class="full">Endereço <input name="endereco" /></label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary" type="submit">Salvar</button>
+          <button class="btn" type="reset" id="resetForm">Limpar</button>
+        </div>
+        <input type="hidden" name="id" />
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Pacientes</h2>
+      <input id="search" placeholder="buscar por nome ou e-mail" />
+      <div id="patientList" class="list" style="margin-top:8px"></div>
+    </section>
+  </main>
+
+  <script src="shell.js"></script>
+  <script type="module">
+    const KEY='psicoai_db_v1';
+    const $=s=>document.querySelector(s);
+
+    function uid(){ return 'pac_' + Math.random().toString(36).slice(2,9); }
+    function maskCPF(c){ c=(c||'').replace(/\D/g,'').padStart(11,'0').slice(0,11);
+      return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'); }
+    async function sha256hex(str){ const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str||'')); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
+    function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
+    function save(db){ localStorage.setItem(KEY, JSON.stringify(db)); }
+
+    function renderList(){
+      const q = ($('#search')?.value||'').toLowerCase();
+      const db=load(); const arr=(db.patients||[]).filter(p=>{
+        return !q || (p.nome||'').toLowerCase().includes(q) || (p.email||'').toLowerCase().includes(q);
+      });
+      $('#patientList').innerHTML = arr.map(p=>`
+        <div class="item">
+          <div>
+            <div><strong>${p.nome}</strong></div>
+            <div class="meta">${p.cpfMasked||''} • ${p.email||''}</div>
+          </div>
+          <div class="row">
+            <a class="btn" href="prontuario.html?pid=${encodeURIComponent(p.id)}">Abrir prontuário</a>
+            <button class="btn" data-edit="${p.id}">Editar</button>
+            <button class="btn" data-del="${p.id}">Excluir</button>
+          </div>
+        </div>
+      `).join('') || '<p class="muted">Nenhum paciente.</p>';
+    }
+
+    document.addEventListener('input', e=>{ if(e.target.id==='search') renderList(); });
+
+    document.addEventListener('click', async e=>{
+      const del = e.target.closest('button[data-del]');
+      const edit= e.target.closest('button[data-edit]');
+      if(del){
+        const id = del.dataset.del;
+        if(!confirm('Excluir paciente e seus registros?')) return;
+        const db=load();
+        db.patients = (db.patients||[]).filter(p=>p.id!==id);
+        db.records  = (db.records || []).filter(r=>r.patientId!==id);
+        save(db); renderList(); return;
+      }
+      if(edit){
+        const id = edit.dataset.edit;
+        const db=load(); const p = (db.patients||[]).find(x=>x.id===id);
+        if(!p) return;
+        const f = $('#patientForm');
+        f.nome.value = p.nome||''; f.cpf.value = p.cpfMasked||''; f.email.value=p.email||'';
+        f.dob.value = p.dob||''; f.endereco.value=p.endereco||''; f.id.value=p.id;
+      }
+    });
+
+    document.getElementById('patientForm').addEventListener('submit', async ev=>{
+      ev.preventDefault();
+      const fd = new FormData(ev.target); const data = Object.fromEntries(fd.entries());
+      const cpfNum = (data.cpf||'').replace(/\D/g,'');
+      const cpfMasked = maskCPF(cpfNum);
+      const cpfHash = await sha256hex(cpfNum || (data.nome+data.email));
+      const pac = {
+        id: data.id?.trim() || uid(),
+        nome: data.nome?.trim(), cpfHash, cpfMasked, email:data.email?.trim(),
+        dob:data.dob||'', endereco:data.endereco?.trim(), createdAt:new Date().toISOString()
+      };
+      const db=load(); db.patients=db.patients||[];
+      const i = db.patients.findIndex(x=>x.id===pac.id);
+      if(i>=0) db.patients[i] = { ...db.patients[i], ...pac };
+      else db.patients.push(pac);
+      save(db); ev.target.reset(); renderList(); alert('Paciente salvo.');
+    });
+
+    renderList();
+  </script>
+</body>
+</html>
