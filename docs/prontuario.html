@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>PsicoAi — Prontuário</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container" style="grid-template-columns:1fr">
+    <section class="panel">
+      <h2>Prontuário</h2>
+      <div class="row">
+        <label class="full">Paciente
+          <select id="selPatient"></select>
+        </label>
+        <label>De: <input id="from" type="date"></label>
+        <label>Até: <input id="to" type="date"></label>
+        <button id="apply" class="btn">Aplicar</button>
+        <a class="btn primary" id="newRec" href="transcricao.html">Nova transcrição</a>
+      </div>
+      <div id="records" style="margin-top:10px"></div>
+    </section>
+  </main>
+
+  <script src="shell.js"></script>
+  <script type="module">
+    const KEY='psicoai_db_v1'; const $=s=>document.querySelector(s);
+    function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
+    function renderPatients(pid){
+      const db=load(); const list = db.patients||[];
+      $('#selPatient').innerHTML = list.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+      if(pid) $('#selPatient').value = pid;
+    }
+    function renderRecords(){
+      const db=load(); const pid = $('#selPatient').value;
+      const A = $('#from').value || '0000-01-01', B = $('#to').value || '9999-12-31';
+      const arr = (db.records||[]).filter(r=>r.patientId===pid && (r.createdAt||'').slice(0,10)>=A && (r.createdAt||'').slice(0,10)<=B)
+        .sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+      $('#records').innerHTML = arr.map(r=>`
+        <div class="item" style="margin-bottom:8px">
+          <div>
+            <div><strong>${new Date(r.createdAt).toLocaleString('pt-BR')}</strong> • ${r.duration||0} min • ${r.setting||'—'}</div>
+            <div class="meta">${(r.transcript||'').slice(0,160)}${(r.transcript||'').length>160?'…':''}</div>
+            <div class="meta">CID: ${(r.cidCodes||[]).join(', ')||'—'} • DSM: ${(r.dsmCodes||[]).join(', ')||'—'}</div>
+          </div>
+          <div class="row">
+            <button class="btn" data-view="${r.id}">Ver</button>
+            <button class="btn" data-del="${r.id}">Excluir</button>
+          </div>
+        </div>
+      `).join('') || '<p class="muted">Sem registros nesse período.</p>';
+    }
+    document.addEventListener('click', e=>{
+      const del=e.target.closest('button[data-del]');
+      const view=e.target.closest('button[data-view]');
+      if(del){
+        const id = del.dataset.del; const db=load();
+        db.records = (db.records||[]).filter(r=>r.id!==id);
+        localStorage.setItem(KEY, JSON.stringify(db)); renderRecords();
+      }
+      if(view){
+        const id=view.dataset.view; const r=(load().records||[]).find(x=>x.id===id);
+        if(r) alert(r.transcript||'(sem transcrição)');
+      }
+    });
+    // pega pid da URL
+    const params = new URLSearchParams(location.search); const pid=params.get('pid');
+    renderPatients(pid); renderRecords();
+    document.getElementById('apply').addEventListener('click', renderRecords);
+    document.getElementById('selPatient').addEventListener('change', renderRecords);
+  </script>
+</body>
+</html>
