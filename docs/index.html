@@ -2,265 +2,52 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>PsicoAi — Prontuário & Análise</title>
+  <title>PsicoAi — Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Fonte profissional (Inter) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <!-- Tema Profissional Clean -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
-  <!-- TOPBAR minimalista -->
-  <header class="topbar">
-    <div class="brand"><h1>PsicoAi</h1></div>
-    <input id="searchBox" class="search" placeholder="Buscar paciente..." />
-    <button id="themeToggle" class="icon-btn" title="Claro/Escuro">🌓</button>
-  </header>
-
-  <!-- LAYOUT 2 COLUNAS -->
   <main class="container">
-
-    <!-- Coluna ESQUERDA ------------------------------------>
-    <!-- Configurações Clínicas (pode ficar recolhível se quiser usar <details>) -->
-    <section class="panel left" id="configPanel">
-      <h2>Configurações Clínicas</h2>
-      <div class="grid">
-        <label>Nome do profissional
-          <input id="clinicianName" placeholder="ex.: Dra. Maria Silva" />
-        </label>
-        <label>Registro (CRP/CRM)
-          <input id="clinicianReg" placeholder="ex.: CRP 00/00000" />
-        </label>
-        <label class="full">Chave secreta (assinatura digital HMAC-SHA-256)
-          <input id="signatureSecret" type="password" placeholder="Opcional — fica só no seu navegador" />
-        </label>
+    <section class="panel">
+      <h2>Resumo</h2>
+      <div class="row" style="gap:12px; flex-wrap:wrap">
+        <div class="kpi"><div class="kpi-num" id="kpiPatients">—</div><div class="kpi-label">Pacientes</div></div>
+        <div class="kpi"><div class="kpi-num" id="kpiRecords">—</div><div class="kpi-label">Sessões</div></div>
+        <div class="kpi"><div class="kpi-num" id="kpiThisMonth">—</div><div class="kpi-label">Min (mês)</div></div>
       </div>
+    </section>
 
-      <h3>Campos clínicos customizáveis</h3>
+    <section class="panel">
+      <h2>Ações rápidas</h2>
       <div class="row">
-        <input id="newFieldLabel" placeholder="ex.: Setting, Intervenções, Escalas..." />
-        <button id="addField" class="btn">Adicionar</button>
-      </div>
-      <div id="customFieldsList" class="list" style="margin-top:8px"></div>
-
-      <div class="row" style="margin-top:8px">
-        <button id="saveSettings" class="btn primary">Salvar</button>
-        <button id="resetSettings" class="btn">Restaurar padrão</button>
-      </div>
-      <p class="muted small" style="margin-top:6px">Tudo é salvo somente no seu navegador (localStorage).</p>
-    </section>
-
-    <!-- Cadastro / Edição de paciente -->
-    <section class="panel left">
-      <h2>Cadastrar / Editar Paciente</h2>
-      <form id="patientForm" autocomplete="off">
-        <div class="grid">
-          <label>Nome <input name="nome" required /></label>
-          <label>CPF <input name="cpf" inputmode="numeric" placeholder="000.000.000-00" required /></label>
-          <label>Data de nascimento <input name="dob" type="date" required /></label>
-          <label>E-mail <input name="email" type="email" required /></label>
-          <label class="full">Endereço <input name="endereco" /></label>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn primary" type="submit">Salvar</button>
-          <button class="btn" type="reset" id="resetForm">Limpar</button>
-          <span class="muted small">O CPF é armazenado como <em>hash</em>; não guardamos o valor bruto.</span>
-        </div>
-        <input type="hidden" name="id" />
-      </form>
-    </section>
-
-    <!-- Lista de pacientes -->
-    <section class="panel left">
-      <h2>Pacientes</h2>
-      <div id="patientList" class="list"></div>
-    </section>
-
-    <!-- Coluna DIREITA ------------------------------------>
-    <!-- Prontuário + Filtros -->
-    <section class="panel right">
-      <h2>Prontuário & Transcrição</h2>
-      <div class="row" style="margin-bottom:6px">
-        <label>De: <input id="filterFrom" type="date"></label>
-        <label>Até: <input id="filterTo" type="date"></label>
-        <button id="applyFilter" class="btn">Aplicar</button>
-        <button id="clearFilter" class="btn">Limpar</button>
-        <span style="flex:1"></span>
-        <button id="openTranscription" class="btn primary">Nova transcrição</button>
-      </div>
-      <div id="recordView" class="record-view empty">
-        <p>Selecione um paciente para visualizar o prontuário.</p>
+        <a class="btn primary" href="pacientes.html">Novo paciente</a>
+        <a class="btn" href="transcricao.html">Nova transcrição</a>
+        <a class="btn" href="prontuario.html">Abrir prontuário</a>
+        <a class="btn" href="relatorios.html">Gerar relatório</a>
       </div>
     </section>
-
-    <!-- Módulo Inteligente -->
-    <section class="panel right">
-      <h2>Módulo Inteligente (Resumo, Teorias)</h2>
-      <div id="analysisPanel" class="analysis"></div>
-    </section>
-
-    <!-- Insights & Gráficos -->
-    <section class="panel right">
-      <h2>Insights & Gráficos (período aplicado)</h2>
-      <div id="chartsPanel">
-        <div class="box">
-          <strong>Duração total por mês (min)</strong>
-          <svg id="chartLine" viewBox="0 0 600 220" style="width:100%;height:auto"></svg>
-        </div>
-        <div class="box" style="margin-top:12px">
-          <strong>Termos mais frequentes</strong>
-          <svg id="chartBars" viewBox="0 0 600 260" style="width:100%;height:auto"></svg>
-        </div>
-      </div>
-    </section>
-
-    <!-- Backup & Relatórios (largura total) -->
-    <section class="panel full">
-      <h2>Backup & Relatórios</h2>
-      <div class="row">
-        <button id="exportJson" class="btn">Exportar JSON</button>
-        <button id="exportCsvPatients" class="btn">CSV Pacientes</button>
-        <button id="exportCsvRecords" class="btn">CSV Prontuários</button>
-        <button id="importJsonBtn" class="btn">Importar JSON</button>
-        <input id="importJsonInput" type="file" accept="application/json" style="display:none" />
-        <button id="pdfReport" class="btn primary">PDF — Última Sessão</button>
-        <button id="pdfReportPeriod" class="btn">PDF — Por período</button>
-      </div>
-
-      <div class="row" style="margin-top:8px">
-        <span class="badge">Comparativo A</span>
-        <label>De: <input id="compAFrom" type="date"></label>
-        <label>Até: <input id="compATo" type="date"></label>
-        <span class="badge">Comparativo B</span>
-        <label>De: <input id="compBFrom" type="date"></label>
-        <label>Até: <input id="compBTo" type="date"></label>
-        <button id="pdfReportCompare" class="btn">PDF — Comparativo</button>
-      </div>
-    </section>
-
   </main>
 
-  <!-- MODAL • Nova Transcrição (mesma estrutura/IDs) -->
-  <div id="transcriptionModal" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal-card">
-      <header class="modal-header">
-        <h3>Nova Transcrição</h3>
-        <button class="icon-btn" id="closeModal" aria-label="Fechar">✕</button>
-      </header>
-
-      <div class="modal-body">
-        <div class="tabs" style="margin-bottom:10px">
-          <button class="tab active" data-tab="upload">Importar Áudio</button>
-          <button class="tab" data-tab="mic">Transcrever (Microfone)</button>
-        </div>
-
-        <!-- Aba: Importar -->
-        <div class="tab-panel" data-panel="upload">
-          <label class="full">Arquivo de áudio
-            <input id="audioFile" type="file" accept="audio/*,video/mp4,video/m4a,video/*" />
-          </label>
-          <label class="full">Cole a transcrição (opcional)
-            <textarea id="pastedTranscript" rows="6" placeholder="Cole a transcrição do áudio, se tiver."></textarea>
-          </label>
-
-          <div class="row" style="margin-top:6px; gap:10px; align-items:center">
-            <button id="btnTranscribeFile" class="btn">Transcrever arquivo (offline)</button>
-            <span id="sttStatus" class="badge">modelo: não carregado</span>
-
-            <!-- Controles opcionais -->
-            <label><input id="sttEnhance" type="checkbox" checked> Melhorar áudio (NR + VAD + AGC)</label>
-            <label>Idioma:
-              <select id="sttLang">
-                <option value="pt" selected>Português</option>
-                <option value="es">Espanhol</option>
-                <option value="en">Inglês</option>
-              </select>
-            </label>
-          </div>
-          <p class="muted small" style="margin-top:6px">
-            A primeira transcrição baixa o modelo Whisper (cache no navegador).
-          </p>
-        </div>
-
-        <!-- Aba: Microfone -->
-        <div class="tab-panel hidden" data-panel="mic">
-          <p class="muted">Use o microfone para ditar (Web Speech API em HTTPS).</p>
-          <div class="row">
-            <button id="startMic" class="btn primary">Iniciar Ditado</button>
-            <button id="stopMic" class="btn" disabled>Parar</button>
-            <span id="micStatus" class="badge">parado</span>
-          </div>
-          <textarea id="liveTranscript" rows="8" placeholder="A transcrição do microfone aparecerá aqui..." readonly></textarea>
-        </div>
-
-        <hr style="border:none;border-top:1px solid var(--border);margin:12px 0" />
-        <h3>Metadados da sessão</h3>
-        <div class="grid">
-          <label>Duração (min) <input id="sessDuration" type="number" min="0" step="5" placeholder="ex.: 50" /></label>
-          <label>Setting <input id="sessSetting" placeholder="ex.: presencial, remoto, hospitalar..." /></label>
-          <label class="full">Intervenções <input id="sessInterv" placeholder="associações, interpretações, manejo..." /></label>
-
-          <label class="full">CID-10 (códigos, separados por vírgula)
-            <input id="sessCID" list="cidList" placeholder="ex.: F32.1, F41.1" />
-            <datalist id="cidList"></datalist>
-            <div id="cidSugg" class="small muted"></div>
-          </label>
-
-          <label class="full">DSM-5 (códigos, separados por vírgula)
-            <input id="sessDSM" list="dsmList" placeholder="ex.: 300.02, 296.32" />
-            <datalist id="dsmList"></datalist>
-            <div id="dsmSugg" class="small muted"></div>
-          </label>
-
-          <div class="full"><div id="descSugg" class="small muted"></div></div>
-        </div>
-        <div id="customFieldsContainer" class="grid" style="margin-top:6px"></div>
-      </div>
-
-      <footer class="modal-footer">
-        <button id="saveTranscript" class="btn primary">Salvar no Prontuário</button>
-        <button id="cancelTranscript" class="btn">Cancelar</button>
-      </footer>
-    </div>
-  </div>
-
-  <!-- ===== Scripts ===== -->
-  <!-- Tema claro/escuro persistente -->
-  <script>
-    (function(){
-      const KEY='psicoai_theme';
-      const html=document.documentElement;
-      html.dataset.theme = localStorage.getItem(KEY) || 'light';
-      document.getElementById('themeToggle')?.addEventListener('click', ()=>{
-        const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
-        html.dataset.theme = next; localStorage.setItem(KEY,next);
-      });
-    })();
+  <script src="shell.js"></script>
+  <script type="module">
+    const KEY='psicoai_db_v1';
+    const db = JSON.parse(localStorage.getItem(KEY)||'{}');
+    const patients = db.patients||[];
+    const records  = db.records ||[];
+    const m = new Date().toISOString().slice(0,7); // YYYY-MM
+    const minMonth = records.filter(r=> (r.createdAt||'').slice(0,7)===m)
+                            .reduce((s,r)=>s+(+r.duration||0),0);
+    document.getElementById('kpiPatients').textContent = patients.length;
+    document.getElementById('kpiRecords').textContent  = records.length;
+    document.getElementById('kpiThisMonth').textContent= minMonth;
   </script>
 
-  <!-- Transcrição offline (com melhoria de áudio e fallbacks) -->
-  <script type="module" src="stt_offline.js?v=6"></script>
-
-  <!-- Módulos do app (mantidos na raiz de docs/) -->
-  <script type="module" src="export.js"></script>
-  <script type="module" src="report.js"></script>
-  <script type="module" src="settings.js"></script>
-  <script type="module" src="codes.js"></script>
-  <script type="module" src="autocomplete.js"></script>
-  <script type="module" src="charts.js"></script>
-  <script type="module" src="components.js"></script>
-  <script type="module" src="analysis.js"></script>
-  <script type="module" src="speech.js"></script>
-  <script type="module" src="db.js"></script>
-  <script type="module" src="utils.js"></script>
-  <script type="module" src="app.js"></script>
-
-  <!-- Quickfix opcional do cadastro (pode remover depois que estiver tudo ok) -->
-  <script src="quickfix-save.js"></script>
+  <style>
+    .kpi{min-width:160px; border:1px solid var(--border); border-radius:12px; padding:12px}
+    .kpi-num{font-size:28px; font-weight:700}
+    .kpi-label{color:var(--muted)}
+  </style>
 </body>
 </html>
