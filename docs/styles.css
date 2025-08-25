@@ -10,10 +10,10 @@
   --muted:#6B7280;       /* texto secundário (gray-500) */
   --primary:#2563EB;     /* azul profissional */
   --primary-ink:#FFFFFF; /* contraste no botão primário */
-  --border:#E5E7EB;      /* linhas/bordas sutis */
+  --border:#F0F2F5;      /* linhas/bordas sutis */
   --ring:#93C5FD;        /* foco */
   --radius:12px;
-  --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.1);
+  --shadow:none;
   --font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
@@ -161,3 +161,4 @@ details.clean > summary{list-style:none; padding:12px 14px; cursor:pointer; font
 details.clean > summary::marker, details.clean > summary::-webkit-details-marker{display:none}
 details.clean[open] > summary{border-bottom:1px solid var(--border)}
 details.clean .content{padding:12px 14px}
+
