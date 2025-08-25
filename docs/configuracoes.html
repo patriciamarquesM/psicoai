@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>PsicoAi — Configurações</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container" style="grid-template-columns:1fr">
+    <section class="panel">
+      <h2>Configurações Clínicas</h2>
+      <div class="grid">
+        <label>Nome do profissional
+          <input id="clinicianName" placeholder="ex.: Dra. Maria Silva" />
+        </label>
+        <label>Registro (CRP/CRM)
+          <input id="clinicianReg" placeholder="ex.: CRP 00/00000" />
+        </label>
+        <label class="full">Chave secreta (assinatura digital)
+          <input id="signatureSecret" type="password" placeholder="Opcional — fica só no seu navegador" />
+        </label>
+      </div>
+
+      <h3>Campos clínicos customizáveis</h3>
+      <div class="row">
+        <input id="newFieldLabel" placeholder="ex.: Setting, Intervenções, Escalas..." />
+        <button id="addField" class="btn">Adicionar</button>
+      </div>
+      <div id="customFieldsList" class="list" style="margin-top:8px"></div>
+
+      <div class="row" style="margin-top:8px">
+        <button id="saveSettings" class="btn primary">Salvar</button>
+        <button id="resetSettings" class="btn">Restaurar padrão</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="shell.js"></script>
+  <script type="module" src="settings.js"></script>
+  <script type="module">
+    import { initSettingsUI } from './settings.js';
+    initSettingsUI?.();
+  </script>
+</body>
+</html>
