@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>PsicoAi — Relatórios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container" style="grid-template-columns:1fr">
+    <section class="panel">
+      <h2>Exportações</h2>
+      <div class="row">
+        <button id="exportJson" class="btn">Exportar JSON (banco completo)</button>
+        <button id="exportCsvPatients" class="btn">Exportar CSV (Pacientes)</button>
+        <button id="exportCsvRecords" class="btn">Exportar CSV (Prontuários)</button>
+        <input id="importJsonInput" type="file" accept="application/json" style="display:none" />
+        <button id="importJsonBtn" class="btn">Importar JSON</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Relatórios (PDF)</h2>
+      <div class="row">
+        <button id="pdfReport" class="btn primary">PDF — Última sessão (paciente atual)</button>
+        <label>De: <input id="filterFrom" type="date"></label>
+        <label>Até: <input id="filterTo" type="date"></label>
+        <button id="pdfReportPeriod" class="btn">PDF — Por período</button>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <span class="badge">Comparativo</span>
+        <label>A De: <input id="compAFrom" type="date"></label>
+        <label>A Até: <input id="compATo" type="date"></label>
+        <label>B De: <input id="compBFrom" type="date"></label>
+        <label>B Até: <input id="compBTo" type="date"></label>
+        <button id="pdfReportCompare" class="btn">PDF — A vs B</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="shell.js"></script>
+  <script type="module" src="export.js"></script>
+  <script type="module" src="report.js"></script>
+  <script type="module">
+    import { bindExportImportUI } from './export.js';
+    import { bindReportUI } from './report.js';
+    // Essas funções já cuidam dos IDs acima
+    bindExportImportUI?.();
+    bindReportUI?.();
+  </script>
+</body>
+</html>
