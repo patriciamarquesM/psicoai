@@ -1,65 +1,91 @@
-// shell.js — Cabeçalho, navegação e tema + CSS "FULL-WIDTH"
+// shell.js — Pro Clinic Shell (Sidebar fixa + título da página + tema)
 (function () {
   const PAGES = [
-    { href: 'index.html',        label: 'Dashboard' },
-    { href: 'pacientes.html',    label: 'Pacientes' },
-    { href: 'prontuario.html',   label: 'Prontuário' },
-    { href: 'transcricao.html',  label: 'Transcrição' },
-    { href: 'relatorios.html',   label: 'Relatórios' },
-    { href: 'configuracoes.html',label: 'Configurações' },
+    { href: 'index.html',        label: 'Dashboard',    icon: '🏠' },
+    { href: 'pacientes.html',    label: 'Pacientes',    icon: '👤' },
+    { href: 'prontuario.html',   label: 'Prontuário',   icon: '🗂️' },
+    { href: 'transcricao.html',  label: 'Transcrição',  icon: '🎙️' },
+    { href: 'relatorios.html',   label: 'Relatórios',   icon: '📄' },
+    { href: 'configuracoes.html',label: 'Configurações',icon: '⚙️' },
   ];
-
-  // Tema persistente
   const THEME_KEY = 'psicoai_theme';
   const html = document.documentElement;
   html.dataset.theme = localStorage.getItem(THEME_KEY) || 'light';
 
-  // Topo + navegação
-  function renderTopbar() {
-    const path = location.pathname.split('/').pop() || 'index.html';
+  // 1) Cria layout .layout (sidebar + main) e move a .container existente para dentro da .main
+  function mountLayout() {
+    const container = document.querySelector('.container') || (() => {
+      const c = document.createElement('main'); c.className = 'container'; document.body.appendChild(c); return c;
+    })();
 
-    const top = document.createElement('header');
-    top.className = 'topbar';
-    top.innerHTML = `
+    const layout = document.createElement('div'); layout.className = 'layout';
+    const main   = document.createElement('div'); main.className   = 'main';
+    const sidebar= document.createElement('aside'); sidebar.className = 'sidebar';
+
+    // Sidebar
+    const path = location.pathname.split('/').pop() || 'index.html';
+    sidebar.innerHTML = `
       <div class="brand"><h1>PsicoAi</h1></div>
-      <nav class="topnav">
+      <nav class="nav">
         ${PAGES.map(p => `
-          <a class="navlink ${p.href === path ? 'active' : ''}" href="${p.href}">${p.label}</a>
+          <a class="${p.href===path ? 'active':''}" href="${p.href}">
+            <span>${p.icon}</span><span>${p.label}</span>
+          </a>
         `).join('')}
       </nav>
-      <button id="themeToggle" class="icon-btn" title="Claro/Escuro">🌓</button>
+      <div class="spacer"></div>
+      <button id="themeToggle" class="themeBtn">🌓 Tema</button>
     `;
 
-    document.body.prepend(top);
+    // Cabeçalho da página
+    const current = PAGES.find(p => p.href===path) || PAGES[0];
+    const head = document.createElement('div');
+    head.className = 'pagehead';
+    head.innerHTML = `
+      <h2>${current.icon} ${current.label}</h2>
+      <div class="page-actions"></div>
+    `;
 
-    // toggle tema
-    document.getElementById('themeToggle')?.addEventListener('click', () => {
+    // Encaixa
+    container.parentNode.insertBefore(layout, container);
+    main.appendChild(head);
+    main.appendChild(container);
+    layout.appendChild(sidebar);
+    layout.appendChild(main);
+
+    // Tema claro/escuro
+    document.getElementById('themeToggle')?.addEventListener('click', ()=>{
       const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
-      html.dataset.theme = next;
-      localStorage.setItem(THEME_KEY, next);
+      html.dataset.theme = next; localStorage.setItem(THEME_KEY,next);
     });
   }
 
-  // CSS: força largura TOTAL e altura de página
-  const css = `
-    :root{ --topbar-h: 58px; }
-    .topbar{ position:sticky; top:0; z-index:40; }
-    /* FULL-WIDTH */
-    .container{
-      width:100%; max-width:none; min-height:calc(100vh - var(--topbar-h));
-      padding:16px 24px 32px; display:block;
-    }
-    /* Nav */
-    .topnav{ display:flex; gap:12px; margin-left:12px }
-    .navlink{ padding:8px 12px; border-radius:10px; color:var(--muted); text-decoration:none; border:1px solid transparent }
-    .navlink.active{ color:var(--text); border-color:var(--border); background:var(--surface) }
-    .navlink:hover{ color:var(--primary); border-color:var(--primary) }
-    /* Painéis ocupam toda a largura, com respiro */
-    .panel{ width:100%; margin:0 0 16px; }
-  `;
-  const style = document.createElement('style');
-  style.textContent = css;
-  document.head.appendChild(style);
+  // 2) Atalhos de ação por página (aparecem no canto direito do cabeçalho)
+  function addPageActions() {
+    const actions = document.querySelector('.page-actions');
+    const file = location.pathname.split('/').pop() || 'index.html';
+    if(!actions) return;
 
-  renderTopbar();
+    const btn = (href,label,primary=false)=>`<a class="btn ${primary?'primary':''}" href="${href}">${label}</a>`;
+
+    if(file==='index.html'){
+      actions.innerHTML = btn('pacientes.html','Novo paciente',true) + btn('transcricao.html','Nova transcrição') + btn('prontuario.html','Abrir prontuário');
+    } else if(file==='pacientes.html'){
+      actions.innerHTML = btn('transcricao.html','Nova transcrição',true);
+    } else if(file==='prontuario.html'){
+      actions.innerHTML = btn('transcricao.html','Nova transcrição',true) + btn('relatorios.html','Gerar relatório');
+    } else if(file==='transcricao.html'){
+      actions.innerHTML = btn('prontuario.html','Ver prontuário',true);
+    } else if(file==='relatorios.html'){
+      actions.innerHTML = btn('prontuario.html','Voltar ao prontuário',true);
+    } else if(file==='configuracoes.html'){
+      actions.innerHTML = btn('pacientes.html','Pacientes');
+    }
+  }
+
+  // Monta
+  document.addEventListener('DOMContentLoaded', ()=>{
+    mountLayout();
+    addPageActions();
+  });
 })();
