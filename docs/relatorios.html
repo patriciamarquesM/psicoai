@@ -7,13 +7,13 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="container" style="grid-template-columns:1fr">
+  <main class="container">
     <section class="panel">
       <h2>Exportações</h2>
       <div class="row">
-        <button id="exportJson" class="btn">Exportar JSON (banco completo)</button>
-        <button id="exportCsvPatients" class="btn">Exportar CSV (Pacientes)</button>
-        <button id="exportCsvRecords" class="btn">Exportar CSV (Prontuários)</button>
+        <button id="exportJson" class="btn">Exportar JSON</button>
+        <button id="exportCsvPatients" class="btn">CSV Pacientes</button>
+        <button id="exportCsvRecords" class="btn">CSV Prontuários</button>
         <input id="importJsonInput" type="file" accept="application/json" style="display:none" />
         <button id="importJsonBtn" class="btn">Importar JSON</button>
       </div>
@@ -45,9 +45,7 @@
   <script type="module">
     import { bindExportImportUI } from './export.js';
     import { bindReportUI } from './report.js';
-    // Essas funções já cuidam dos IDs acima
-    bindExportImportUI?.();
-    bindReportUI?.();
+    bindExportImportUI?.(); bindReportUI?.();
   </script>
 </body>
 </html>
