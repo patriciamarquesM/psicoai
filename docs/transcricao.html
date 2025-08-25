@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>PsicoAi — Transcrição</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container" style="grid-template-columns:1fr">
+    <section class="panel">
+      <h2>Nova transcrição</h2>
+      <div class="grid">
+        <label class="full">Paciente
+          <select id="selPatient"></select>
+        </label>
+
+        <label class="full">Arquivo de áudio
+          <input id="audioFile" type="file" accept="audio/*,video/mp4,video/m4a,video/*" />
+        </label>
+
+        <label class="full">Transcrição
+          <textarea id="pastedTranscript" rows="8" placeholder="A transcrição aparecerá aqui..."></textarea>
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <button id="btnTranscribeFile" class="btn">Transcrever arquivo (offline)</button>
+        <span id="sttStatus" class="badge">modelo: não carregado</span>
+        <label><input id="sttEnhance" type="checkbox" checked> Melhorar áudio</label>
+        <label>Idioma:
+          <select id="sttLang"><option value="pt" selected>PT</option><option value="es">ES</option><option value="en">EN</option></select>
+        </label>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0" />
+
+      <h3>Metadados</h3>
+      <div class="grid">
+        <label>Duração (min) <input id="sessDuration" type="number" min="0" step="5" placeholder="50" /></label>
+        <label>Setting <input id="sessSetting" placeholder="presencial / remoto..." /></label>
+        <label class="full">Intervenções <input id="sessInterv" placeholder="associações, interpretações..." /></label>
+        <label class="full">CID-10 <input id="sessCID" placeholder="ex.: F32.1, F41.1" /></label>
+        <label class="full">DSM-5 <input id="sessDSM" placeholder="ex.: 300.02, 296.32" /></label>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="saveTranscript" class="btn primary">Salvar</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="shell.js"></script>
+  <script type="module" src="stt_offline.js?v=6"></script>
+  <script type="module">
+    const KEY='psicoai_db_v1'; const $=s=>document.querySelector(s);
+    function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
+    function save(db){ localStorage.setItem(KEY, JSON.stringify(db)); }
+    function uid(){ return 'rec_' + Math.random().toString(36).slice(2,9); }
+
+    // preencher pacientes
+    (function(){
+      const db=load(); const list=db.patients||[];
+      $('#selPatient').innerHTML = list.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('') || '<option>Cadastre um paciente</option>';
+    })();
+
+    // salvar
+    document.getElementById('saveTranscript').addEventListener('click', ()=>{
+      const pid = $('#selPatient').value; if(!pid){ alert('Selecione um paciente.'); return; }
+      const db=load(); db.records=db.records||[];
+      db.records.push({
+        id: uid(), patientId: pid, createdAt: new Date().toISOString(),
+        source: $('#audioFile').files[0] ? 'upload':'manual',
+        audioName: $('#audioFile').files[0]?.name || '', audioUrl: '',
+        transcript: $('#pastedTranscript').value || '',
+        duration: +($('#sessDuration').value||0), setting: $('#sessSetting').value||'',
+        interventions: $('#sessInterv').value||'',
+        cidCodes: ($('#sessCID').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+        dsmCodes: ($('#sessDSM').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+        custom:{}
+      });
+      save(db); alert('Transcrição salva.'); location.href='prontuario.html?pid='+encodeURIComponent(pid);
+    });
+  </script>
+</body>
+</html>
