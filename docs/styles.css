@@ -117,3 +117,10 @@ html[data-theme="dark"] .badge{ background:#141A44; color:#CBD5E1 }
 
 /* Utilidades */
 .muted{color:var(--muted)} .small{font-size:12px}
+
+/* --- PATCH anti-sobreposição (força layout novo) --- */
+header.topbar, .topbar, nav.topnav, #themeToggle.icon-btn { display:none !important; }
+.container { width:100% !important; max-width:none !important; padding:24px 24px 40px !important; }
+.panel { width:100% !important; }
+
+
