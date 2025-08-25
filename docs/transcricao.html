@@ -4,34 +4,45 @@
   <meta charset="utf-8" />
   <title>PsicoAi — Transcrição</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tema Pro Clinic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- O shell.js injeta a sidebar e o cabeçalho de página -->
   <main class="container">
     <section class="panel">
       <h2>Nova transcrição</h2>
+
       <div class="grid">
         <label class="full">Paciente
           <select id="selPatient"></select>
         </label>
+
         <label class="full">Arquivo de áudio
           <input id="audioFile" type="file" accept="audio/*,video/mp4,video/m4a,video/*" />
         </label>
+
         <label class="full">Transcrição
-          <textarea id="pastedTranscript" rows="10" placeholder="A transcrição aparecerá aqui..."></textarea>
+          <textarea id="pastedTranscript" rows="12" placeholder="A transcrição aparecerá aqui..."></textarea>
         </label>
       </div>
 
-      <div class="row" style="margin-top:8px; gap:10px; align-items:center">
+      <div class="row" style="margin-top:10px; gap:12px; align-items:center">
         <button id="btnTranscribeFile" class="btn">Transcrever arquivo (offline)</button>
         <span id="sttStatus" class="badge">modelo: não carregado</span>
         <label><input id="sttEnhance" type="checkbox" checked> Melhorar áudio</label>
         <label>Idioma:
-          <select id="sttLang"><option value="pt" selected>PT</option><option value="es">ES</option><option value="en">EN</option></select>
+          <select id="sttLang">
+            <option value="pt" selected>PT</option>
+            <option value="es">ES</option>
+            <option value="en">EN</option>
+          </select>
         </label>
       </div>
 
-      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0" />
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0" />
 
       <h3>Metadados</h3>
       <div class="grid">
@@ -42,21 +53,25 @@
         <label class="full">DSM-5 <input id="sessDSM" placeholder="ex.: 300.02, 296.32" /></label>
       </div>
 
-      <div class="row" style="margin-top:10px">
+      <div class="row" style="margin-top:12px">
         <button id="saveTranscript" class="btn primary">Salvar no Prontuário</button>
       </div>
     </section>
   </main>
 
+  <!-- Shell (sidebar + cabeçalho) -->
   <script src="shell.js"></script>
+  <!-- STT offline (com NR + VAD + AGC + fallbacks) -->
   <script type="module" src="stt_offline.js?v=6"></script>
+
+  <!-- Lógica da página (mínima, reusa seu localStorage) -->
   <script type="module">
     const KEY='psicoai_db_v1'; const $=s=>document.querySelector(s);
     function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
     function save(db){ localStorage.setItem(KEY, JSON.stringify(db)); }
     function uid(){ return 'rec_'+Math.random().toString(36).slice(2,9); }
 
-    // lista de pacientes
+    // preencher pacientes
     (function(){
       const list=(load().patients||[]);
       const sel=$('#selPatient');
