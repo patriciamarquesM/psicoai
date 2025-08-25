@@ -7,24 +7,22 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="container" style="grid-template-columns:1fr">
+  <main class="container">
     <section class="panel">
       <h2>Nova transcrição</h2>
       <div class="grid">
         <label class="full">Paciente
           <select id="selPatient"></select>
         </label>
-
         <label class="full">Arquivo de áudio
           <input id="audioFile" type="file" accept="audio/*,video/mp4,video/m4a,video/*" />
         </label>
-
         <label class="full">Transcrição
-          <textarea id="pastedTranscript" rows="8" placeholder="A transcrição aparecerá aqui..."></textarea>
+          <textarea id="pastedTranscript" rows="10" placeholder="A transcrição aparecerá aqui..."></textarea>
         </label>
       </div>
 
-      <div class="row" style="margin-top:8px">
+      <div class="row" style="margin-top:8px; gap:10px; align-items:center">
         <button id="btnTranscribeFile" class="btn">Transcrever arquivo (offline)</button>
         <span id="sttStatus" class="badge">modelo: não carregado</span>
         <label><input id="sttEnhance" type="checkbox" checked> Melhorar áudio</label>
@@ -45,7 +43,7 @@
       </div>
 
       <div class="row" style="margin-top:10px">
-        <button id="saveTranscript" class="btn primary">Salvar</button>
+        <button id="saveTranscript" class="btn primary">Salvar no Prontuário</button>
       </div>
     </section>
   </main>
@@ -56,12 +54,14 @@
     const KEY='psicoai_db_v1'; const $=s=>document.querySelector(s);
     function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
     function save(db){ localStorage.setItem(KEY, JSON.stringify(db)); }
-    function uid(){ return 'rec_' + Math.random().toString(36).slice(2,9); }
+    function uid(){ return 'rec_'+Math.random().toString(36).slice(2,9); }
 
-    // preencher pacientes
+    // lista de pacientes
     (function(){
-      const db=load(); const list=db.patients||[];
-      $('#selPatient').innerHTML = list.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('') || '<option>Cadastre um paciente</option>';
+      const list=(load().patients||[]);
+      const sel=$('#selPatient');
+      sel.innerHTML = list.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('') || '<option>Cadastre um paciente</option>';
+      const pid=new URLSearchParams(location.search).get('pid'); if(pid) sel.value=pid;
     })();
 
     // salvar
