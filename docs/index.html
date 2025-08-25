@@ -7,43 +7,38 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="10" stroke="#5b7fff" stroke-width="2"/>
-        <path d="M7 14c2 2 8 2 10-1" stroke="#5b7fff" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <h1>PsicoAi</h1>
+ <header class="topbar">
+  <div class="brand">
+    <h1>PsicoAi</h1>
+  </div>
+  <input id="searchBox" class="search" placeholder="Buscar paciente..." />
+  <button id="themeToggle" class="icon-btn" title="Claro/Escuro">🌓</button>
+</header>
+
+<details class="clean" open>
+  <summary>Backup & Relatórios</summary>
+  <div class="content">
+    <div class="row">
+      <button id="exportJson" class="btn">Exportar JSON</button>
+      <button id="exportCsvPatients" class="btn">CSV Pacientes</button>
+      <button id="exportCsvRecords" class="btn">CSV Prontuários</button>
+      <button id="importJsonBtn" class="btn">Importar JSON</button>
+      <input id="importJsonInput" type="file" accept="application/json" style="display:none" />
+      <button id="pdfReport" class="btn primary">PDF — Última Sessão</button>
+      <button id="pdfReportPeriod" class="btn">PDF — Por período</button>
     </div>
-    <input id="searchBox" class="search" placeholder="Buscar paciente por nome, e-mail ou CPF..." />
-  </header>
-
-  <main class="container">
-    <!-- BACKUP & RELATÓRIOS -->
-    <section class="panel">
-      <h2>Backup & Relatórios</h2>
-      <div class="row">
-        <button id="exportJson" class="btn">Exportar JSON (banco completo)</button>
-        <button id="exportCsvPatients" class="btn">Exportar CSV (Pacientes)</button>
-        <button id="exportCsvRecords" class="btn">Exportar CSV (Prontuários)</button>
-        <button id="importJsonBtn" class="btn">Importar JSON</button>
-        <input id="importJsonInput" type="file" accept="application/json" style="display:none" />
-        <button id="pdfReport" class="btn primary">Gerar PDF — Módulo Inteligente</button>
-        <button id="pdfReportPeriod" class="btn">Relatório por período (PDF)</button>
-      </div>
-
-      <div class="row" style="margin-top:8px">
-        <span class="badge">Comparativo A</span>
-        <label>De: <input id="compAFrom" type="date"></label>
-        <label>Até: <input id="compATo" type="date"></label>
-        <span class="badge">Comparativo B</span>
-        <label>De: <input id="compBFrom" type="date"></label>
-        <label>Até: <input id="compBTo" type="date"></label>
-        <button id="pdfReportCompare" class="btn">Relatório comparativo (PDF)</button>
-      </div>
-      <p class="muted">O JSON contém pacientes (com hash de CPF) e todos os registros/transcrições.</p>
-    </section>
-
+    <div class="row" style="margin-top:8px">
+      <span class="badge">Comparativo A</span>
+      <label>De: <input id="compAFrom" type="date"></label>
+      <label>Até: <input id="compATo" type="date"></label>
+      <span class="badge">Comparativo B</span>
+      <label>De: <input id="compBFrom" type="date"></label>
+      <label>Até: <input id="compBTo" type="date"></label>
+      <button id="pdfReportCompare" class="btn">PDF — Comparativo</button>
+    </div>
+  </div>
+</details>
+  
     <!-- CONFIGURAÇÕES CLÍNICAS -->
     <section class="panel">
       <h2>Configurações Clínicas</h2>
@@ -218,6 +213,7 @@
   <script src="quickfix-save.js"></script>
 </body>
 </html>
+
 
 
 
